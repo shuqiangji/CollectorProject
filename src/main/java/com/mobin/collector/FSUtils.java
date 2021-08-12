@@ -439,11 +439,25 @@ public class FSUtils {
         FileStatus fileStatus = fs.getFileStatus(file);
         return fileStatus.getLen() > 0;
     }
-
+    
     /**
-     * 获取HDFS配置信息，目前只考虑了HA模式，其他模式暂不考虑额
+     * 获取HDFS配置信息
+     * 
+     * @author JSQ
+     * @param
+     * @return {@link Configuration}
      */
     private static Configuration getConfiguration(){
+        if (StringUtils.isNotEmpty(HdfsConfig.hdfsUser)) {
+            System.setProperty("HADOOP_USER_NAME", HdfsConfig.hdfsUser);
+        }
+        return HdfsConfig.isHa? getHaConfiguration() : getSimpleConfiguration();
+    }
+
+    /**
+     * 获取HDFS配置信息，HA模式
+     */
+    private static Configuration getHaConfiguration(){
         if (StringUtils.isEmpty(HdfsConfig.nameServices) || CollectionUtils.isEmpty(HdfsConfig.nameNodes)
                 || CollectionUtils.isEmpty(HdfsConfig.nameNodesAddress)
                 || HdfsConfig.nameNodes.size() != HdfsConfig.nameNodesAddress.size()) {
@@ -461,6 +475,19 @@ public class FSUtils {
         }
         conf.set("dfs.client.failover.proxy.provider." + HdfsConfig.nameServices,
                 "org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider");
+        return conf;
+    }
+
+    /**
+     * 获取HDFS配置信息，伪分布式模式
+     */
+    private static Configuration getSimpleConfiguration(){
+        if (StringUtils.isEmpty(HdfsConfig.nameServices)) {
+            throw new RuntimeException("HDFS配置不正确，请检查！");
+        }
+        Configuration conf = new Configuration();
+        String defaultFs = "hdfs://" + HdfsConfig.nameServices;
+        conf.set("fs.defaultFS", defaultFs);
         return conf;
     }
 
