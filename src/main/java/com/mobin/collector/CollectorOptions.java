@@ -60,10 +60,12 @@ public class CollectorOptions {
             log.error("-dateTime和startTime只能同时指定其中一个");
         }
 
-        if (dateTime ==null && startTime ==null) {
+        /*if (dateTime ==null && startTime ==null) {
             startTime = FSUtils.formateDate(new Date(), Config.dateFormat);
+        }*/
+        if (dateTime ==null && startTime ==null) {
+            startTime = FSUtils.formateDate(new Date(), Config.dateTimeFormat);
         }
-
         checkDateTime(dateTime);
         checkDateTime(startTime);
         collectors.addAll(Arrays.asList(collectorsStr.split(",")));

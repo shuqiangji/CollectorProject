@@ -16,9 +16,11 @@ public class Config {
     public static final String DATE_FORMAT = "yyyyMMdd";
 
     public static final SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
+
     public static final SimpleDateFormat dateTimeFormat = new SimpleDateFormat(DATE_TIME_FORMAT);
 
     public static final String Mobin_collectorPath = getStringProperty("Mobin_collectorPath");
+
     public static final String Mobin_targetPath = getStringProperty("Mobin_targetPath");
 
     private static Properties loadConfig() {

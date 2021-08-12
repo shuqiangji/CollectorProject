@@ -24,8 +24,10 @@ public class MobinTest {
         System.out.println(Config.getStringProperty("Mobin_prefix"));
         File file = new File("E:\\collectProjectFile\\TEST.txt.down");
         //Configuration conf = new Configuration();
+        System.setProperty("HADOOP_USER_NAME", "hdfs");
         Configuration conf = getConfiguration();
         FileSystem fs = FileSystem.newInstance(conf);
+
         CollectorOptions collectorOptions = new CollectorOptions();
         collectorOptions.dateTime = "20170628";
         CollectFile collectFile = new CollectFile(fs, file, "/hdfs/video");
@@ -38,13 +40,12 @@ public class MobinTest {
     }
 
     /**
-    * 获取HDFS配置信息
+    * 获取HDFS配置信息，目前只考虑了HA模式，其他模式暂不考虑额
     */
     private Configuration getConfiguration(){
         if (StringUtils.isEmpty(HdfsConfig.nameServices) || CollectionUtils.isEmpty(HdfsConfig.nameNodes)
                 || CollectionUtils.isEmpty(HdfsConfig.nameNodesAddress)
                 || HdfsConfig.nameNodes.size() != HdfsConfig.nameNodesAddress.size()) {
-
             throw new RuntimeException("HDFS配置不正确，请检查！");
         }
         Configuration conf = new Configuration();
@@ -52,7 +53,7 @@ public class MobinTest {
         conf.set("fs.defaultFS", defaultFs);
         conf.set("dfs.nameservices", HdfsConfig.nameServices);
         String nameNodes = "dfs.ha.namenodes." + HdfsConfig.nameServices;
-        conf.set(nameNodes, StringUtils.join(HdfsConfig.nameNodes), ",");
+        conf.set(nameNodes, StringUtils.join(HdfsConfig.nameNodes, ","));
         for (int i = 0; i < HdfsConfig.nameNodes.size(); i++) {
             String key = "dfs.namenode.rpc-address." + HdfsConfig.nameServices + "." + HdfsConfig.nameNodes.get(i);
             conf.set(key, HdfsConfig.nameNodesAddress.get(i));

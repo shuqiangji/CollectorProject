@@ -8,14 +8,13 @@ import org.slf4j.LoggerFactory;
  */
 public class Testm {
     public static void main(String[] args) throws InterruptedException {
-           String dateTime = "2017122711";
-           String str = "-dateTime " + dateTime + " "
-                   + "-collectors mobin "
-                   + "-parallelizable true ";
+        String dateTime = "2017122711";
+        String str = "-collectors mobin "
+                + "-parallelizable true ";
 
-           DataCollector.main(str.split(" "));
+        DataCollector.main(str.split(" "));
 
-//         Logger log = LoggerFactory.getLogger(Testm.class);
-//        log.info("555");
+        Logger log = LoggerFactory.getLogger(Testm.class);
+        log.info("555");
     }
 }

@@ -1,7 +1,10 @@
 package com.mobin.collector;
 
 import com.mobin.common.DataFile;
+import com.mobin.config.HdfsConfig;
 import jodd.datetime.TimeUtil;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
@@ -386,7 +389,8 @@ public class FSUtils {
     }
 
     public static FileSystem getFileSystem() throws IOException {
-        Configuration configuration = new Configuration();
+        //Configuration configuration = new Configuration();
+        Configuration configuration = getConfiguration();
         return FileSystem.get(configuration);
     }
 
@@ -434,6 +438,30 @@ public class FSUtils {
     public static boolean isNotEmptyFile(FileSystem fs,Path file) throws IOException {
         FileStatus fileStatus = fs.getFileStatus(file);
         return fileStatus.getLen() > 0;
+    }
+
+    /**
+     * 获取HDFS配置信息，目前只考虑了HA模式，其他模式暂不考虑额
+     */
+    private static Configuration getConfiguration(){
+        if (StringUtils.isEmpty(HdfsConfig.nameServices) || CollectionUtils.isEmpty(HdfsConfig.nameNodes)
+                || CollectionUtils.isEmpty(HdfsConfig.nameNodesAddress)
+                || HdfsConfig.nameNodes.size() != HdfsConfig.nameNodesAddress.size()) {
+            throw new RuntimeException("HDFS配置不正确，请检查！");
+        }
+        Configuration conf = new Configuration();
+        String defaultFs = "hdfs://" + HdfsConfig.nameServices;
+        conf.set("fs.defaultFS", defaultFs);
+        conf.set("dfs.nameservices", HdfsConfig.nameServices);
+        String nameNodes = "dfs.ha.namenodes." + HdfsConfig.nameServices;
+        conf.set(nameNodes, StringUtils.join(HdfsConfig.nameNodes, ","));
+        for (int i = 0; i < HdfsConfig.nameNodes.size(); i++) {
+            String key = "dfs.namenode.rpc-address." + HdfsConfig.nameServices + "." + HdfsConfig.nameNodes.get(i);
+            conf.set(key, HdfsConfig.nameNodesAddress.get(i));
+        }
+        conf.set("dfs.client.failover.proxy.provider." + HdfsConfig.nameServices,
+                "org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider");
+        return conf;
     }
 
 }

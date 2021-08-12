@@ -27,11 +27,11 @@ import java.util.logging.Filter;
  * Created by Mobin on 2017/5/7.
  * 采集类
  */
-public abstract  class Collector implements  Runnable {
+public abstract class Collector implements Runnable {
     static final Logger log = LoggerFactory.getLogger(Collector.class);
     static final String DONE = ".done";
     static final String DOWN = ".down";
-    static final Charset CHARSET =  Charset.forName("GBK");
+    static final Charset CHARSET = Charset.forName("GBK");
 
     FileSystem fs;
     String collectorPath;
@@ -55,27 +55,28 @@ public abstract  class Collector implements  Runnable {
 
     private Thread shutdownHook;
     private volatile boolean shutdown;
+
     @Override
     public void run() {
-          shutdownHook = new Thread(){
-              @Override
-              public void run() {
-                  //如果JVM被强制关闭，首先会执行该run方法
-                  Collector.this.shutdown = true;
-                  awaitFinsh();
-              }
-          };
+        shutdownHook = new Thread() {
+            @Override
+            public void run() {
+                //如果JVM被强制关闭，首先会执行该run方法
+                Collector.this.shutdown = true;
+                awaitFinsh();
+            }
+        };
         //注册钩子，保证程序能正常执行完
         Runtime.getRuntime().addShutdownHook(shutdownHook);
 
         try {
             copyFile();
-        }finally {
+        } finally {
             notifyFinish();
         }
     }
 
-    private synchronized void awaitFinsh(){
+    private synchronized void awaitFinsh() {
         log.info("awaiting copy action" + this + "finish");
         try {
             wait();
@@ -85,12 +86,12 @@ public abstract  class Collector implements  Runnable {
         }
     }
 
-    private void copyFile(){
+    private void copyFile() {
         Map<String, ArrayList<CollectFile>> dateTimeToNewFilesMap = getNewFiles();
         try {
             if (options.parallelizable) {
                 copyFilesParallel(dateTimeToNewFilesMap);
-            }else {
+            } else {
                 copyFileSerially(dateTimeToNewFilesMap);
             }
         } catch (Exception e) {
@@ -99,9 +100,9 @@ public abstract  class Collector implements  Runnable {
     }
 
     private void copyFilesParallel(Map<String, ArrayList<CollectFile>> dateTimeToNewFilesMap) throws ExecutionException, InterruptedException {
-        ThreadPoolExecutor threadPoolExecutor = FSUtils.getThreadPoolExecutor(Runtime.getRuntime().availableProcessors() /2);
-         int count = 0;
-        for (Map.Entry<String, ArrayList<CollectFile>> entry: dateTimeToNewFilesMap.entrySet()) {
+        ThreadPoolExecutor threadPoolExecutor = FSUtils.getThreadPoolExecutor(Runtime.getRuntime().availableProcessors() / 2);
+        int count = 0;
+        for (Map.Entry<String, ArrayList<CollectFile>> entry : dateTimeToNewFilesMap.entrySet()) {
             String dateTime = entry.getKey();
             ArrayList<CollectFile> collectFiles = entry.getValue();
 
@@ -109,15 +110,15 @@ public abstract  class Collector implements  Runnable {
             final ArrayList<CollectFile> copiedFiles = new ArrayList<>();
             final AtomicLong size = new AtomicLong();
             log.info("Collector: " + this + ", dateTime:" + dateTime + ", collectingFiles size: "
-                                  + collectFiles.size() + ", threadPoolExecutor szie:" + threadPoolExecutor.getMaximumPoolSize());
-            for (final CollectFile collectFile: collectFiles){
+                    + collectFiles.size() + ", threadPoolExecutor szie:" + threadPoolExecutor.getMaximumPoolSize());
+            for (final CollectFile collectFile : collectFiles) {
                 Runnable task = new Runnable() {
                     @Override
                     public void run() {
                         try {
                             collectFile.copy();
-                            if (collectFile.isCopied()){
-                                synchronized (copiedFiles){  //ArrayList不是同步的
+                            if (collectFile.isCopied()) {
+                                synchronized (copiedFiles) {  //ArrayList不是同步的
                                     copiedFiles.add(collectFile);
                                     size.addAndGet(collectFile.file.length());
                                 }
@@ -127,25 +128,24 @@ public abstract  class Collector implements  Runnable {
                         }
                     }
                 };
-               futures.add(threadPoolExecutor.submit(task));
-                for(Future f: futures){
+                futures.add(threadPoolExecutor.submit(task));
+                for (Future f : futures) {
                     f.get();    //这里必须f.get，因为futures中的任务中子任务
                 }
             }
             finish(dateTime, copiedFiles);
-
         }
     }
 
     private void copyFileSerially(Map<String, ArrayList<CollectFile>> dateTimeToNewFilesMap) throws IOException {
-        for (Map.Entry<String,ArrayList<CollectFile>> entry: dateTimeToNewFilesMap.entrySet()) {
+        for (Map.Entry<String, ArrayList<CollectFile>> entry : dateTimeToNewFilesMap.entrySet()) {
             String dateTime = entry.getKey();
             ArrayList<CollectFile> collectingFiles = entry.getValue();   //需要采集的文件
             ArrayList<CollectFile> copiedFiles = new ArrayList<>();
             long size = 0;
-            for (CollectFile collectingFile: collectingFiles) {
+            for (CollectFile collectingFile : collectingFiles) {
                 collectingFile.copy();
-                if(collectingFile.isCopied()) {   //已经copied文件
+                if (collectingFile.isCopied()) {   //已经copied文件
                     copiedFiles.add(collectingFile);
                     size += collectingFile.file.length();
                 }
@@ -167,22 +167,22 @@ public abstract  class Collector implements  Runnable {
         try {
             out = new BufferedOutputStream(fs.create(new Path(newFile)));
             for (CollectFile cf : copiedFiles) {
-                if (cf.isCopied()){
+                if (cf.isCopied()) {
                     out.write((cf.file + "\n").getBytes(CHARSET));
                 }
             }
             out.flush();
         } catch (IOException e) {
             log.error("Failed to write file: " + newFile, e);
-        }finally {
+        } finally {
             IOUtils.closeStream(out);
         }
         updateCopiedDataFiles(dateTime, copiedFiles);
     }
 
     private void updateCopiedDataFiles(String dateTime, ArrayList<CollectFile> newFiles) {
-      String copiedFileName = getCopiedFileName(dateTime);  //获取已copied文件路径   srcPath + _COPIED_FILES_ + "/" + date + "/" + dateTime + ".txt"
-      Path path = new Path(copiedFileName);  //获取已copied文件
+        String copiedFileName = getCopiedFileName(dateTime);  //获取已copied文件路径   srcPath + _COPIED_FILES_ + "/" + date + "/" + dateTime + ".txt"
+        Path path = new Path(copiedFileName);  //获取已copied文件
         try {
             OutputStream os = FSUtils.openOutputStream(fs, path);
             try {
@@ -196,7 +196,7 @@ public abstract  class Collector implements  Runnable {
                 }
                 os.write(buff.toString().getBytes("UTF-8"));
                 os.flush();
-            }finally {
+            } finally {
                 FSUtils.closeStreamSilently(os);
             }
         } catch (IOException e) {
@@ -211,13 +211,13 @@ public abstract  class Collector implements  Runnable {
         notify();
     }
 
-    protected Map<String, ArrayList<CollectFile>> getNewFiles(String dir, FilenameFilter filter){
+    protected Map<String, ArrayList<CollectFile>> getNewFiles(String dir, FilenameFilter filter) {
         ArrayList<String> list = new ArrayList<>(1);
         list.add(dir);
         return getNewFiles(list, filter);
     }
 
-    public List<String> getDateDir(){
+    public List<String> getDateDir() {
         if (collectorPath == null || collectorPath.isEmpty()) {
             return new ArrayList<>(0);
         }
@@ -230,22 +230,21 @@ public abstract  class Collector implements  Runnable {
     }
 
     /**
-     *
      * @param dirs:collectorPath.split(",")
      * @param dateFormat:时间格式
-     * @return  需要采集的目录，比如[xx/zz/20170628,xx/zzz/20170628]
+     * @return 需要采集的目录，比如[xx/zz/20170628,xx/zzz/20170628]
      */
-    public List<String> getDateDir(String[] dirs, SimpleDateFormat dateFormat){
-        for (int i = 0, length = dirs.length; i < length; i ++) {
+    public List<String> getDateDir(String[] dirs, SimpleDateFormat dateFormat) {
+        for (int i = 0, length = dirs.length; i < length; i++) {
             dirs[i] = FSUtils.appendSlash(dirs[i]);
         }
         List<String> dateDirs;
         //只采集某个小时的数据
         if (options.dateTime != null) {
-             dateDirs = new ArrayList<>(dirs.length);
+            dateDirs = new ArrayList<>(dirs.length);
             String date = FSUtils.getDate(options.dateTime);  //date:20170624 dateTime:2017032410
-            for (int i = 0, length = dirs.length; i < length; i ++) {
-                     dateDirs.add(dirs[i] + date + File.separator);   //配置中的采集目录是xx/xxx,到这里拼接日期变成xx/xxx/20170624/
+            for (int i = 0, length = dirs.length; i < length; i++) {
+                dateDirs.add(dirs[i] + date + File.separator);   //配置中的采集目录是xx/xxx,到这里拼接日期变成xx/xxx/20170624/
             }
         } else {  //集采连续几天的数据
             String startTime = FSUtils.getDate(options.startTime);
@@ -254,23 +253,22 @@ public abstract  class Collector implements  Runnable {
             try {
                 dates = FSUtils.getDates(startTime, currentDate, dateFormat);
             } catch (ParseException e) {
-                log.error("Invalid date" , e);
+                log.error("Invalid date", e);
                 return new ArrayList<>(0);
             }
             dateDirs = new ArrayList<>(dirs.length * dates.size());
 
             for (String date : dates) {
-                for (int i = 0, length = dirs.length; i < length; i ++) {
+                for (int i = 0, length = dirs.length; i < length; i++) {
                     dateDirs.add(dirs[i] + date + File.separator);
                 }
             }
         }
-     return dateDirs;
+        return dateDirs;
     }
 
 
-
-    protected Map<String, ArrayList<CollectFile>> getNewFiles(List<String> dirs, FilenameFilter filter){
+    protected Map<String, ArrayList<CollectFile>> getNewFiles(List<String> dirs, FilenameFilter filter) {
         dirs = getModifiedDirs(dirs);    //需要copy的文件队列
         log.info("modified dirs:" + dirs);
         Map<String, ArrayList<CollectFile>> dateTimeToNewFilesMap = new TreeMap<>();
@@ -280,7 +278,7 @@ public abstract  class Collector implements  Runnable {
         for (String d : dirs) {
             File dir = new File(d);
             File[] files;
-            if (filter != null){
+            if (filter != null) {
                 files = dir.listFiles(filter);
             } else {
                 files = dir.listFiles();
@@ -298,7 +296,7 @@ public abstract  class Collector implements  Runnable {
                     String dateTime;
                     try {
                         dateTime = getFileDateTime(name);
-                    }catch (Exception e){
+                    } catch (Exception e) {
                         log.warn("文件名不包含日期时间，可能是一个无效的文件或文件名");
                         continue;
                     }
@@ -312,11 +310,11 @@ public abstract  class Collector implements  Runnable {
                         }
                     }
                     //文件已经入库过
-                    if (isCopied(dateTime, f , dateTimeToCopiedFilesMap, dateTimeToFileIdMap)) {
+                    if (isCopied(dateTime, f, dateTimeToCopiedFilesMap, dateTimeToFileIdMap)) {
                         continue;
                     }
                     //新文件
-                    String date = dateTime.substring(0, dateTime.length() -2);
+                    String date = dateTime.substring(0, dateTime.length() - 2);
                     String targetDir = targetPath + date + File.separator + dateTime + File.separator;
                     ArrayList<CollectFile> newFiles = dateTimeToNewFilesMap.get(dateTime);
                     if (newFiles == null) {
@@ -327,7 +325,7 @@ public abstract  class Collector implements  Runnable {
                 }
             }
         }
-        return  dateTimeToNewFilesMap;
+        return dateTimeToNewFilesMap;
     }
 
     private boolean isCopied(String dateTime, File f, Map<String, HashSet<String>> dateTimeToCopiedFilesMap, Map<String, AtomicLong> dateTimeToFileIdMap) {
@@ -352,7 +350,7 @@ public abstract  class Collector implements  Runnable {
             return copiedFiles;
         }
         //如果存在,就读取文件中的内容
-        try(BufferedReaderIterable bri = FSUtils.createBufferedReadIterable(fs, copiedFileName)){
+        try (BufferedReaderIterable bri = FSUtils.createBufferedReadIterable(fs, copiedFileName)) {
             for (String line : bri) {
                 if (line.isEmpty()) {
                     continue;
@@ -363,19 +361,19 @@ public abstract  class Collector implements  Runnable {
             }
             dateTimeToFileIdMap.put(dateTime, new AtomicLong(bri.getVaildRecords()));
         }
-      return copiedFiles;
+        return copiedFiles;
     }
 
     private String getCopiedFileName(String dateTime) {
         String date = dateTime.substring(0, dateTime.length() - 2);
         //srcPath + _COPIED_FILES_ + "/" + date + "/" + dateTime + ".txt"文件保存的是文件的路径
-        return targetPath + _COPIED_FILES_ + File.separator+ date + File.separator + dateTime + ".txt";
+        return targetPath + _COPIED_FILES_ + File.separator + date + File.separator + dateTime + ".txt";
     }
 
 
     private boolean isCopyableFile(File f) {
         long lastModifiedTime = f.lastModified();
-        if (f.isFile() && f.length() >0 && lastModifiedTime + options.checkInterval < System.currentTimeMillis()) {  //说明在这时间间隔内文件没有被修改
+        if (f.isFile() && f.length() > 0 && lastModifiedTime + options.checkInterval < System.currentTimeMillis()) {  //说明在这时间间隔内文件没有被修改
             return true;
         }
         return false;
@@ -392,7 +390,7 @@ public abstract  class Collector implements  Runnable {
 
     private List<String> getModifiedDirs(List<String> dirs) {
         List<String> modifiedeDirs = new ArrayList<>();
-        for (String dir: dirs) {
+        for (String dir : dirs) {
             File d = new File(dir);
             if (!d.exists()) {
                 log.warn("Dir not exists : " + dir);
@@ -400,7 +398,7 @@ public abstract  class Collector implements  Runnable {
             }
 
             synchronized (dirCache) {
-                Long cacheLastModified  = dirCache.get(dir); //获取文件的时间戳（缓存值）
+                Long cacheLastModified = dirCache.get(dir); //获取文件的时间戳（缓存值）
                 long lastModified = d.lastModified();  // （实时值）
                 if (cacheLastModified == null || lastModified > cacheLastModified) {  //说明有新文件或文件有更新
                     modifiedeDirs.add(dir);
