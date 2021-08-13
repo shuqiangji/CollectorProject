@@ -31,3 +31,10 @@
 
 
 *  updateCopiedDataFiles(dateTime, copiedFiles)：该方法主要是将采集过的文件信息写入到target/_COPIED_FILES/yyyyMMhh/yyyyMMhh.txt中
+
+
+# 注意事项
+
+1. 文件的存放要放在对应的日期下面，如20210813目录，文件的命名需要遵循xxx_20210813152100.zip.down或者xxx_20210813152100.zip.done这样的格式
+这样的格式主要是通过filefilter来进行的筛选，这块需要根据实际情况决定是否要将这块的筛选移除
+2. 时间在整个处理逻辑中使用非常多，这里需要理清楚，lastmodified，文件名中的时间等的用处究竟是什么？可以进行精简
