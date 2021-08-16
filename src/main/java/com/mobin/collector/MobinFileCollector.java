@@ -49,7 +49,6 @@ public   class MobinFileCollector extends Collector {
 
     @Override
     public String getFileDateTime(String fileName) {
-        //xxxx_20170622205522
         int pos = fileName.lastIndexOf('_') + 1;
         return fileName.substring(pos, pos + 10);  //小时
     }

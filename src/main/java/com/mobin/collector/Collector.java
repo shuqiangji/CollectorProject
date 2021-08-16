@@ -315,8 +315,8 @@ public abstract class Collector implements Runnable {
                         /*if (!options.startTime.equals(dateTime)) {
                             continue;
                         }*/
-                        //修改后
-                        if (compare(options.startTime, dateTime, Config.DATE_TIME_FORMAT, "yyyy-MM-dd HH:mm:ss")){
+                        //JSQ修改后
+                        if (compare(options.startTime, dateTime, Config.DATE_TIME_FORMAT, "yyyyMMddHH:mm:ss")){
                             continue;
                         }
                     }
