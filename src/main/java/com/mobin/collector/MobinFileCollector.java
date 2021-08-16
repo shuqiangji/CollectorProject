@@ -42,7 +42,9 @@ public   class MobinFileCollector extends Collector {
                 return n.endsWith(DOWN) || n.endsWith(DONE);
             }
         };
-        return getNewFiles(getDateDir(), filter);
+        //return getNewFiles(getDateDir(), filter);
+        //JSQ:移除文件名过滤
+        return getNewFiles(getDateDir(), null);
     }
 
     @Override

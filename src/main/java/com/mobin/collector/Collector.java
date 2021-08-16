@@ -16,6 +16,8 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -160,7 +162,6 @@ public abstract class Collector implements Runnable {
         if (copiedFiles.isEmpty()) {
             return;
         }
-
         String id = FSUtils.getUID() + ".txt";
         OutputStream out = null;
         String newFile = targetPath + NEW_FILES + File.separator + "f_" + dateTime + "_" + id;
@@ -310,7 +311,12 @@ public abstract class Collector implements Runnable {
                             continue;
                         }
                     } else if (options.startTime != null) {
-                        if (!options.startTime.equals(dateTime)) {
+                        //修改前
+                        /*if (!options.startTime.equals(dateTime)) {
+                            continue;
+                        }*/
+                        //修改后
+                        if (compare(options.startTime, dateTime, Config.DATE_TIME_FORMAT, "yyyy-MM-dd HH:mm:ss")){
                             continue;
                         }
                     }
@@ -413,5 +419,24 @@ public abstract class Collector implements Runnable {
             }
         }
         return modifiedDirs;
+    }
+
+    /**
+     * 文件时间字符串比较大小
+     *
+     * @author JSQ
+     * @param datetime1 时间1
+     * @param datetime2 时间2
+     * @return datetime1在datetime2之后（相等）true，否则false
+     */
+    private boolean compare(String datetime1, String datetime2, String format1, String format2) {
+        DateTimeFormatter df1 = DateTimeFormatter.ofPattern(format1);
+        DateTimeFormatter df2 = DateTimeFormatter.ofPattern(format1);
+        LocalDateTime tempDatetime1 = LocalDateTime.parse(datetime1, df1);
+        LocalDateTime tempDatetime2 = LocalDateTime.parse(datetime2, df2);
+        if (tempDatetime1.isBefore(tempDatetime2)){
+            return false;
+        }
+        return true;
     }
 }

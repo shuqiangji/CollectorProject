@@ -22,7 +22,7 @@ public class MobinTest {
         System.out.println(System.getProperty("mm"));
         System.out.println(MobinTest.class.getResourceAsStream("/File_conf.properties"));
         System.out.println(Config.getStringProperty("Mobin_prefix"));
-        File file = new File("E:\\collectProjectFile\\TEST.txt.down");
+        File file = new File("E:\\collectProjectFile\\TEST.txt");
         //Configuration conf = new Configuration();
         System.setProperty("HADOOP_USER_NAME", "hdfs");
         Configuration conf = getConfiguration();

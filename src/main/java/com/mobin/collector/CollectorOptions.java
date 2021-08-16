@@ -21,7 +21,9 @@ public class CollectorOptions {
     private static final Logger log = LoggerFactory.getLogger(CollectorOptions.class);
 
     public int checkInterval = 2 * 60 * 1000;  //两分钟轮询一次
+
     public String dateTime = null;  //只采集某个小时的数据
+
     public String startTime = null;  //采集>=startTime的数据
 
     boolean parallelizable = false;

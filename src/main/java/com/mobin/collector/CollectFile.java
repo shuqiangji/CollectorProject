@@ -58,11 +58,12 @@ public class CollectFile {
         InputStream in = null;
         OutputStream out = null;
         String fileName = file.getName();
-        if (fileName.endsWith(Collector.DONE)) {
+        //JSQ：移除文件后缀检查
+        /*if (fileName.endsWith(Collector.DONE)) {
             fileName = fileName.substring(0, fileName.length() - Collector.DONE.length());
         } else if (fileName.endsWith(Collector.DOWN)) {
             fileName = fileName.substring(0, fileName.length() - Collector.DOWN.length());
-        }
+        }*/
         long startTime = System.currentTimeMillis();
         boolean created = false;
         try {
