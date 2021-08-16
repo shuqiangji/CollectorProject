@@ -181,8 +181,10 @@ public abstract class Collector implements Runnable {
     }
 
     private void updateCopiedDataFiles(String dateTime, ArrayList<CollectFile> newFiles) {
-        String copiedFileName = getCopiedFileName(dateTime);  //获取已copied文件路径   srcPath + _COPIED_FILES_ + "/" + date + "/" + dateTime + ".txt"
-        Path path = new Path(copiedFileName);  //获取已copied文件
+        //获取已copied文件路径   srcPath + _COPIED_FILES_ + "/" + date + "/" + dateTime + ".txt"
+        String copiedFileName = getCopiedFileName(dateTime);
+        //获取已copied文件
+        Path path = new Path(copiedFileName);
         try {
             OutputStream os = FSUtils.openOutputStream(fs, path);
             try {
@@ -246,7 +248,8 @@ public abstract class Collector implements Runnable {
             for (int i = 0, length = dirs.length; i < length; i++) {
                 dateDirs.add(dirs[i] + date + File.separator);   //配置中的采集目录是xx/xxx,到这里拼接日期变成xx/xxx/20170624/
             }
-        } else {  //集采连续几天的数据
+        } else {
+            //集采连续几天的数据
             String startTime = FSUtils.getDate(options.startTime);
             String currentDate = FSUtils.getCurrentDate(dateFormat);
             List<String> dates;
@@ -269,7 +272,8 @@ public abstract class Collector implements Runnable {
 
 
     protected Map<String, ArrayList<CollectFile>> getNewFiles(List<String> dirs, FilenameFilter filter) {
-        dirs = getModifiedDirs(dirs);    //需要copy的文件队列
+        //需要copy的文件队列
+        dirs = getModifiedDirs(dirs);
         log.info("modified dirs:" + dirs);
         Map<String, ArrayList<CollectFile>> dateTimeToNewFilesMap = new TreeMap<>();
         Map<String, HashSet<String>> dateTimeToCopiedFilesMap = new TreeMap<>();
@@ -289,7 +293,8 @@ public abstract class Collector implements Runnable {
 
             log.info("dir: " + dir + ", files:" + files.length);
             for (File f : files) {
-                if (!isCopyableFile(f)) {  //延迟判断文件是否已经写完，如果目录时间戳在延迟间隔不改了，必需删除目录缓存
+                //延迟判断文件是否已经写完，如果目录时间戳在延迟间隔不改了，必需删除目录缓存
+                if (!isCopyableFile(f)) {
                     removeDirCache(d);
                 } else {
                     String name = f.getName();
@@ -330,7 +335,8 @@ public abstract class Collector implements Runnable {
 
     private boolean isCopied(String dateTime, File f, Map<String, HashSet<String>> dateTimeToCopiedFilesMap, Map<String, AtomicLong> dateTimeToFileIdMap) {
         HashSet<String> copiedFiles = dateTimeToCopiedFilesMap.get(dateTime);
-        if (copiedFiles == null) {  //新文件
+        //新文件
+        if (copiedFiles == null) {
             try {
                 copiedFiles = readCopiedFiles(dateTime, dateTimeToFileIdMap);
                 dateTimeToCopiedFilesMap.put(dateTime, copiedFiles);
@@ -345,7 +351,8 @@ public abstract class Collector implements Runnable {
     private HashSet<String> readCopiedFiles(String dateTime, Map<String, AtomicLong> dateTimeToFileIdMap) throws IOException {
         String copiedFileName = getCopiedFileName(dateTime);
         HashSet<String> copiedFiles = new HashSet<>();
-        if (!fs.exists(new Path(copiedFileName))) {  //判断该路径下是否存在该文件，如果不存在
+        //判断该路径下是否存在该文件，如果不存在
+        if (!fs.exists(new Path(copiedFileName))) {
             dateTimeToFileIdMap.put(dateTime, new AtomicLong(0));
             return copiedFiles;
         }
@@ -389,23 +396,22 @@ public abstract class Collector implements Runnable {
     }
 
     private List<String> getModifiedDirs(List<String> dirs) {
-        List<String> modifiedeDirs = new ArrayList<>();
+        List<String> modifiedDirs = new ArrayList<>();
         for (String dir : dirs) {
             File d = new File(dir);
             if (!d.exists()) {
                 log.warn("Dir not exists : " + dir);
                 continue;
             }
-
             synchronized (dirCache) {
                 Long cacheLastModified = dirCache.get(dir); //获取文件的时间戳（缓存值）
                 long lastModified = d.lastModified();  // （实时值）
                 if (cacheLastModified == null || lastModified > cacheLastModified) {  //说明有新文件或文件有更新
-                    modifiedeDirs.add(dir);
+                    modifiedDirs.add(dir);
                     dirCache.put(dir, lastModified);
                 }
             }
         }
-        return modifiedeDirs;
+        return modifiedDirs;
     }
 }
