@@ -107,7 +107,6 @@ public abstract class Collector implements Runnable {
         for (Map.Entry<String, ArrayList<CollectFile>> entry : dateTimeToNewFilesMap.entrySet()) {
             String dateTime = entry.getKey();
             ArrayList<CollectFile> collectFiles = entry.getValue();
-
             ArrayList<Future<?>> futures = new ArrayList<>();
             final ArrayList<CollectFile> copiedFiles = new ArrayList<>();
             final AtomicLong size = new AtomicLong();
@@ -118,6 +117,7 @@ public abstract class Collector implements Runnable {
                     @Override
                     public void run() {
                         try {
+                            log.info("当前线程id：" + Thread.currentThread().getId() + "，name：" + Thread.currentThread().getName());
                             collectFile.copy();
                             if (collectFile.isCopied()) {
                                 synchronized (copiedFiles) {  //ArrayList不是同步的

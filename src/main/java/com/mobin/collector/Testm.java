@@ -13,7 +13,6 @@ public class Testm {
                 + "-parallelizable true ";
 
         DataCollector.main(str.split(" "));
-
         Logger log = LoggerFactory.getLogger(Testm.class);
         log.info("555");
     }

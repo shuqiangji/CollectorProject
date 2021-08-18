@@ -18,6 +18,7 @@ import java.util.HashSet;
  * 校验程序的程序的启动参数
  */
 public class CollectorOptions {
+
     private static final Logger log = LoggerFactory.getLogger(CollectorOptions.class);
 
     public int checkInterval = 2 * 60 * 1000;  //两分钟轮询一次

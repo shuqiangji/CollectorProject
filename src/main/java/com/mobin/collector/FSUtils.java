@@ -39,18 +39,18 @@ public class FSUtils {
 
     private static ThreadPoolExecutor threadPoolExecutor;
 
-    public static synchronized ThreadPoolExecutor getThreadPoolExecutor(){
+    /*public static synchronized ThreadPoolExecutor getThreadPoolExecutor() {
         return getThreadPoolExecutor(-1);
-    }
+    }*/
 
-    public static synchronized ThreadPoolExecutor getThreadPoolExecutor(int maximumPoolSize){
+    public static synchronized ThreadPoolExecutor getThreadPoolExecutor(int maximumPoolSize) {
         if (threadPoolExecutor == null) {
             threadPoolExecutor = createThreadPoolExecutor(maximumPoolSize);
         }
         return threadPoolExecutor;
     }
 
-    public static ThreadPoolExecutor createThreadPoolExecutor(int maximumPoolSize){
+    public static ThreadPoolExecutor createThreadPoolExecutor(int maximumPoolSize) {
         if (maximumPoolSize <= 0)
             //采集任务为I/O密集型任务，任务执行过程中等待I/O的时间长于使用CPU的时间，且牌I/O等待状态的时间的线程并不会消耗CPU资源，所以maximumPoolSize=availableProcessors*2
             maximumPoolSize = Runtime.getRuntime().availableProcessors() * 2;
@@ -64,7 +64,7 @@ public class FSUtils {
         return createVolatileExecutor(name, -1);
     }
 
-    public static VolatileExecutor createVolatileExecutor(String name, int maximumPoolSize){
+    public static VolatileExecutor createVolatileExecutor(String name, int maximumPoolSize) {
         if (maximumPoolSize <= 0) {
             maximumPoolSize = Runtime.getRuntime().availableProcessors();
         }
@@ -72,49 +72,48 @@ public class FSUtils {
                 new DeamonThreadFactory(name));
     }
 
-    public static class VolatileExecutor implements AutoCloseable{
+    public static class VolatileExecutor implements AutoCloseable {
         private final ArrayList<Future<?>> futures = new ArrayList<>();
         private final ArrayList<Object> tasks = new ArrayList<>();
-        private  final ThreadPoolExecutor threadPoolExecutor;
+        private final ThreadPoolExecutor threadPoolExecutor;
 
         public VolatileExecutor(int corePoolSize,   //核心线程，池中所保存的线程数
                                 int maximumPoolSize,         //最大线程数，可创建的最大线程数
                                 long keepAileTime,              //如果线程数大于corePoolSize,则这些多余的线程空闲时间超过该参数将被终止
                                 TimeUnit unit,                      //keepAileTime的时间单位
                                 BlockingQueue<Runnable> workQueue,   //保存任务的阻塞队列
-                                ThreadFactory threadFactory){
+                                ThreadFactory threadFactory) {
             threadPoolExecutor = new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAileTime, unit, workQueue, threadFactory);
             threadPoolExecutor.setRejectedExecutionHandler(blockingExecutorHandler);
             threadPoolExecutor.allowsCoreThreadTimeOut();
-
         }
 
         @Override
         public void close() throws Exception {
-              if (!futures.isEmpty()) {
-                  await();
-              }
+            if (!futures.isEmpty()) {
+                await();
+            }
             threadPoolExecutor.shutdown();
         }
 
         //传入task，要把task的类型来执行任务
         public void submitTasks(List<?> tasks) {
             for (Object task : tasks) {
-                if (task instanceof  Runnable) {
+                if (task instanceof Runnable) {
                     submitTask((Runnable) task);
-                }else if (task instanceof  Callable) {
+                } else if (task instanceof Callable) {
                     submitTask((Callable<?>) task);
-                }else {
+                } else {
                     log.warn("Invalid task: " + task);
                 }
             }
         }
 
-        public void submitTask(Runnable task){
+        public void submitTask(Runnable task) {
             try {
                 futures.add(threadPoolExecutor.submit(task));   // 方便获取任务执行结果
                 tasks.add(task);
-            }catch (Exception e){
+            } catch (Exception e) {
                 log.info("Failed to submit tabks " + task + "," + e);
             }
         }
@@ -123,13 +122,13 @@ public class FSUtils {
             try {
                 futures.add(threadPoolExecutor.submit(task));
                 tasks.add(task);
-            }catch (Exception e) {
+            } catch (Exception e) {
                 log.error("Failed to submit task: " + task + "," + e);
             }
         }
 
         public void await() {
-            for (int i = 0, size = futures.size(); i < size; i  ++) {
+            for (int i = 0, size = futures.size(); i < size; i++) {
                 try {
                     futures.get(i).get();
                 } catch (Exception e) {
@@ -148,10 +147,10 @@ public class FSUtils {
             BlockingQueue<Runnable> queue = executor.getQueue();
             while (true) {
                 if (executor.isShutdown()) {
-                    throw  new RejectedExecutionException("TheadPoolExecutor has shut down!");
+                    throw new RejectedExecutionException("TheadPoolExecutor has shut down!");
                 }
                 try {
-                    if (queue.offer(task, 1000, TimeUnit.MILLISECONDS)){
+                    if (queue.offer(task, 1000, TimeUnit.MILLISECONDS)) {
                         break;
                     }
                 } catch (InterruptedException e) {
@@ -162,12 +161,12 @@ public class FSUtils {
         }
     };
 
-    public static class DeamonThreadFactory implements  ThreadFactory {
+    public static class DeamonThreadFactory implements ThreadFactory {
         private final String id;
         private final int priority;
         private final AtomicInteger n = new AtomicInteger(1);
 
-        public DeamonThreadFactory(){
+        public DeamonThreadFactory() {
             this.id = "mobin-thread";
             this.priority = Thread.NORM_PRIORITY;
         }
@@ -176,7 +175,7 @@ public class FSUtils {
             this(id, Thread.NORM_PRIORITY);
         }
 
-        public DeamonThreadFactory(String id, int priority){
+        public DeamonThreadFactory(String id, int priority) {
             this.id = "mobin" + id + "-thread";
             this.priority = priority;
         }
@@ -184,7 +183,7 @@ public class FSUtils {
         @Override
         public Thread newThread(Runnable runnable) {
             String name = id + "-" + n.getAndIncrement();
-            Thread thread = new Thread(runnable,name);
+            Thread thread = new Thread(runnable, name);
             thread.setPriority(priority);
             thread.setDaemon(true);    //守护线程
             return thread;
@@ -209,7 +208,7 @@ public class FSUtils {
             this.size = fs.getFileStatus(path).getLen();
 
             //解压缩
-//            CompressionCodecFactory factory = new CompressionCodecFactory(fs.getConf());
+            //CompressionCodecFactory factory = new CompressionCodecFactory(fs.getConf());
             CompressionCodec codec = null;
 
             FSDataInputStream inputStream = fs.open(path, 8096);
@@ -225,7 +224,7 @@ public class FSUtils {
         }
 
         public void incrementVaildRecords() {
-            vaildRecords ++;
+            vaildRecords++;
         }
 
         public long getVaildRecords() {
@@ -236,11 +235,12 @@ public class FSUtils {
         public Iterator<String> iterator() {
             return new Iterator<String>() {
                 private String line;
+
                 @Override
                 public boolean hasNext() {
                     try {
                         line = br.readLine();
-                    }catch (IOException e) {
+                    } catch (IOException e) {
                         log.error("Failed to readLine, file: " + file, e);
                         line = null;
                     }
@@ -254,7 +254,7 @@ public class FSUtils {
 
                 @Override
                 public void remove() {
-                       throw new UnsupportedOperationException("remove");
+                    throw new UnsupportedOperationException("remove");
                 }
             };
         }
@@ -262,9 +262,9 @@ public class FSUtils {
         @Override
         public void close() throws IOException {
             if (br != null) {
-                try{
+                try {
                     br.close();
-                }catch (Throwable t){
+                } catch (Throwable t) {
                     log.debug("Failed to close stream");
                 }
 
@@ -283,7 +283,7 @@ public class FSUtils {
     }
 
     public static String getDate(String dateTime) {
-        return dateTime.substring(0, dateTime.length() -2);
+        return dateTime.substring(0, dateTime.length() - 2);
     }
 
     public static String getCurrentDate(SimpleDateFormat dateFormat) {
@@ -308,19 +308,19 @@ public class FSUtils {
         return dates;
     }
 
-    public static Date parseDate(String date,SimpleDateFormat dateFormat) throws ParseException {
+    public static Date parseDate(String date, SimpleDateFormat dateFormat) throws ParseException {
         synchronized (dateFormat) {
             return dateFormat.parse(date);
         }
     }
 
     public static long parseDateTime(String dateTime, SimpleDateFormat dateTimeFormat) throws ParseException {
-        synchronized (dateTimeFormat){
+        synchronized (dateTimeFormat) {
             return dateTimeFormat.parse(dateTime).getTime();
         }
     }
 
-    public static String formateDate (Date date, SimpleDateFormat dateFormat) {
+    public static String formateDate(Date date, SimpleDateFormat dateFormat) {
         synchronized (dateFormat) {
             return dateFormat.format(date);
         }
@@ -328,14 +328,14 @@ public class FSUtils {
 
     public static String getUID() {
         String ip;
-            try {
-                ip = InetAddress.getLocalHost().getHostAddress();
-            } catch (UnknownHostException e) {
-                ip = "UnknownHost";
-            }
-            ip += "_" + UUID.randomUUID();
-            ip = ip.replace(".","_").replace(":","_").replace("-","_");
-            return ip;
+        try {
+            ip = InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException e) {
+            ip = "UnknownHost";
+        }
+        ip += "_" + UUID.randomUUID();
+        ip = ip.replace(".", "_").replace(":", "_").replace("-", "_");
+        return ip;
     }
 
     public static OutputStream openOutputStream(FileSystem fs, Path path) throws IOException {
@@ -345,15 +345,15 @@ public class FSUtils {
                 os = fs.append(path);
             } catch (Exception e) {
                 //不支持append
-                byte[] oldBytes = FSUtils.readDataFile(fs ,path);
+                byte[] oldBytes = FSUtils.readDataFile(fs, path);
                 os = fs.create(path);  //打开path文件获取流
                 os.write(oldBytes);
             }
         } else {
             os = fs.create(path);
         }
-          return os;
-        }
+        return os;
+    }
 
     public static byte[] readDataFile(FileSystem fs, Path dateFile) throws IOException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream(2 * 1024 * 1024);
@@ -384,7 +384,7 @@ public class FSUtils {
         return fs.exists(new Path(p));
     }
 
-    public static boolean isFile(FileSystem fs,String p) throws IOException {
+    public static boolean isFile(FileSystem fs, String p) throws IOException {
         return fs.isFile(new Path(p));
     }
 
@@ -400,64 +400,64 @@ public class FSUtils {
 
     //遍历lzo文件
     public static void getDataFileRecurslvely(FileSystem fs, Path p, ArrayList<DataFile> files) throws IOException {
-        if (fs.isFile(p)){
+        if (fs.isFile(p)) {
             if (isNotEmptyFile(fs, p))
                 files.add(new DataFile(p.toString()));
             return;
         }
 
         boolean containsLzo = false;
-        for (FileStatus fileStatus: fs.listStatus(p)){
+        for (FileStatus fileStatus : fs.listStatus(p)) {
             Path path = fileStatus.getPath();
-            if(fs.isFile(path) && DataFile.isLzoFile(path)){
+            if (fs.isFile(path) && DataFile.isLzoFile(path)) {
                 containsLzo = true;
                 break;
             }
         }
 
         //如果当前目录下有lzo文件，那么不再递归遍历子目录，并且只抽取lzo文件
-        if (containsLzo){
-            for (FileStatus fileStatus: fs.listStatus(p)){
+        if (containsLzo) {
+            for (FileStatus fileStatus : fs.listStatus(p)) {
                 Path lzoPath = fileStatus.getPath();
-                if (fs.isFile(lzoPath) && DataFile.isLzoFile(lzoPath) && isNotEmptyFile(fs, lzoPath)){
+                if (fs.isFile(lzoPath) && DataFile.isLzoFile(lzoPath) && isNotEmptyFile(fs, lzoPath)) {
                     files.add(new DataFile(lzoPath, true));
                 }
             }
-        }else {
-            for (FileStatus fileStatus: fs.listStatus(p)){
+        } else {
+            for (FileStatus fileStatus : fs.listStatus(p)) {
                 Path path = fileStatus.getPath();
-                if (fs.isFile(path) && isNotEmptyFile(fs, path)){
+                if (fs.isFile(path) && isNotEmptyFile(fs, path)) {
                     files.add(new DataFile(path, false));
-                }else{
-                    getDataFileRecurslvely(fs,path,files);
+                } else {
+                    getDataFileRecurslvely(fs, path, files);
                 }
             }
         }
     }
 
-    public static boolean isNotEmptyFile(FileSystem fs,Path file) throws IOException {
+    public static boolean isNotEmptyFile(FileSystem fs, Path file) throws IOException {
         FileStatus fileStatus = fs.getFileStatus(file);
         return fileStatus.getLen() > 0;
     }
-    
+
     /**
      * 获取HDFS配置信息
-     * 
-     * @author JSQ
+     *
      * @param
      * @return {@link Configuration}
+     * @author JSQ
      */
-    private static Configuration getConfiguration(){
+    private static Configuration getConfiguration() {
         if (StringUtils.isNotEmpty(HdfsConfig.hdfsUser)) {
             System.setProperty("HADOOP_USER_NAME", HdfsConfig.hdfsUser);
         }
-        return HdfsConfig.isHa? getHaConfiguration() : getSimpleConfiguration();
+        return HdfsConfig.isHa ? getHaConfiguration() : getSimpleConfiguration();
     }
 
     /**
      * 获取HDFS配置信息，HA模式
      */
-    private static Configuration getHaConfiguration(){
+    private static Configuration getHaConfiguration() {
         if (StringUtils.isEmpty(HdfsConfig.nameServices) || CollectionUtils.isEmpty(HdfsConfig.nameNodes)
                 || CollectionUtils.isEmpty(HdfsConfig.nameNodesAddress)
                 || HdfsConfig.nameNodes.size() != HdfsConfig.nameNodesAddress.size()) {
@@ -481,7 +481,7 @@ public class FSUtils {
     /**
      * 获取HDFS配置信息，伪分布式模式
      */
-    private static Configuration getSimpleConfiguration(){
+    private static Configuration getSimpleConfiguration() {
         if (StringUtils.isEmpty(HdfsConfig.nameServices)) {
             throw new RuntimeException("HDFS配置不正确，请检查！");
         }

@@ -58,7 +58,6 @@ public class DataCollector {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
         }
     }
 
